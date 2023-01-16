@@ -23,9 +23,9 @@ Parse.Cloud.define('getSiteNameId', async (request) => {
 
 
 Parse.Cloud.define("getUserInstalledApps", async (request) => {
-  const { siteId, platformUserEmail } = request.params;
+  const { siteId, userEmail } = request.params;
   try {
-    const apps = await getUserInstalledApps(siteId, platformUserEmail);
+    const apps = await getUserInstalledApps(siteId, userEmail);
     
     return { status: 'success', apps };
   } catch (error) {
@@ -1165,7 +1165,7 @@ const getAppsListByDeveloperSlug = async(siteId, slug) => {
 }
 
 
-const getUserInstalledApps = async(siteId, platformUserEmail) => {
+const getUserInstalledApps = async(siteId, userEmail) => {
   try {
     // get site name Id and generate MODEL names based on that
     const siteNameId = await getSiteNameId(siteId);
@@ -1177,7 +1177,7 @@ const getUserInstalledApps = async(siteId, platformUserEmail) => {
 
     const query = new Parse.Query(USERS_EXTENSION_MODEL_NAME);
     query.equalTo('t__status', 'Published');
-    query.equalTo('UserEmail', platformUserEmail);
+    query.equalTo('UserEmail', userEmail);
     query.include('AppsList');
     
     const record = await query.first();
