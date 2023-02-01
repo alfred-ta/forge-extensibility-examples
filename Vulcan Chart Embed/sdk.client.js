@@ -62,6 +62,11 @@ window.forgeSDK = (() => {
   eventer(messageEvent, function(e) {
     const { data: payload } = e;
     console.log('receive:', payload);
+    
+    if (payload.type === 'CONNECT' && !extensionId) {
+      initialize(payload);
+      return;
+    }
     if (payload.type == 'CALLBACK') {
       const func = callbacks[payload.callbackId];
 
