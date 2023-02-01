@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .sticky-shadow {
+    box-shadow: 0px 3px 3px rgba(0, 0, 0, 0.15);
+  }
+
+  .button-wrapper-shadow {
+    box-shadow: 0px -4px 16px rgba(0, 0, 0, 0.08);
+  }
+}
+
+body {
+  font-family: 'proxima-nova';
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+.pin-spacer {
+  pointer-events: none;
+}
+
+.btn {
+  @apply inline-flex items-center justify-center rounded text-base font-semibold border
+		cursor-pointer transition-colors select-none;
+}
+
+.btn-primary {
+  @apply bg-coral-70 hover:bg-coral-100 text-white;
+}
+
+.btn-secondary {
+  @apply bg-gray-60 hover:bg-gray-80 text-white;
+}
+
+.btn-lg {
+  @apply py-4 px-12 rounded-lg;
+}
+
+.btn-md {
+  @apply py-2 px-8 rounded;
+}
+
+.btn-sm {
+  @apply py-1 px-4 rounded-sm;
+}
+
+.loading-wrapper {
+  @apply fixed inset-0 flex items-center justify-center bg-extra-light-gray bg-opacity-60;
+  z-index: 1000;
+}

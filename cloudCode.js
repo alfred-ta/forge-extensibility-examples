@@ -25,16 +25,30 @@ Parse.Cloud.define('getSiteNameId', async (request) => {
 Parse.Cloud.define("getUserInstalledApps", async (request) => {
   const { siteId, userEmail } = request.params;
   try {
-    const apps = await getUserInstalledApps(siteId, userEmail);
+    const { list: apps, id } = await getUserInstalledApps(siteId, userEmail);
 
-    console.log('--------------------- get user installed apps', apps);
+    console.log('****************', id);
     
-    return { status: 'success', apps };
+    return { status: 'success', apps, id };
   } catch (error) {
     console.error('inside getUserInstalledApps', error);
     return { status: 'error', error };
   }
 });
+
+
+Parse.Cloud.define("uninstallApp", async (request) => {
+  const { siteId, appId, objectId } = request.params;
+  try {
+    await uninstallApp(siteId, objectId, appId);
+
+    return { status: 'success' };
+  } catch (error) {
+    console.error('inside uninstallApp', error);
+    return { status: 'error', error };
+  }
+});
+
 
 Parse.Cloud.define("getAppsList", async (request) => {
   const { siteId, filter: { developer = [], status } } = request.params;
@@ -1198,15 +1212,51 @@ const getUserInstalledApps = async(siteId, userEmail) => {
     const record = await query.first();
 
     let list = [];
+    let id = null;
     if (record && record.get('AppsList') && record.get('AppsList')[0]) {
+      id = record.id;
       appsObjects = record.get('AppsList');
       list = getPlainAppsList(appsObjects);
     }
     
-    return list;
+    return { id, list };
 
   } catch(error) {
     console.error('inside getUserInstalledApps function', error);
+    throw error;
+  }
+}
+
+
+const uninstallApp = async(siteId, objectId, appId) => {
+  try {
+    // get site name Id and generate MODEL names based on that
+    const siteNameId = await getSiteNameId(siteId);
+    if (siteNameId === null) {
+      throw { message: 'Invalid siteId' };
+    }
+
+    const USER_INSTALLED_APPS_MODEL_NAME = `ct____${siteNameId}____UserInstalledApps`;
+
+    const query = new Parse.Query(USER_INSTALLED_APPS_MODEL_NAME);
+    query.equalTo('objectId', objectId);
+    
+    const app = await query.first();
+    if (app) {
+      let appsList = app.get('AppsList');
+      console.log('======================apps list', appsList);
+      if (appsList && appsList.length > 0) {
+        appsList = appsList.filter(obj => obj.objectId !== appId);
+      }
+      
+      console.log('apps list-----------------------------', appsList);
+
+      app.set('AppsList', appsList);
+      await app.save();
+    }
+
+  } catch(error) {
+    console.error('inside uninstallApp function', error);
     throw error;
   }
 }
