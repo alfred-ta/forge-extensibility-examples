@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Parse from 'parse/dist/parse.min.js';
+import toast from 'react-hot-toast';
 
 import { initParse } from '@/lib';
 const Main = (props) => {
@@ -18,12 +19,17 @@ const Main = (props) => {
   };
 
   const onUninstallApp = async (app) => {
-    const res = await Parse.Cloud.run('uninstallApp', {
-      siteId: import.meta.env.VITE_SITE_ID,
-      objectId,
-      appId: app.id
-    })
-    console.log('the response of uninstall app', res);
+    if (window.confirm(`Are you sure to remove the app ${app.name}.`)) {
+      const res = await Parse.Cloud.run('uninstallApp', {
+        siteId: import.meta.env.VITE_SITE_ID,
+        objectId,
+        appId: app.id
+      })
+      if (res.status === 'success' && res.removedId) {
+        toast('Successfully removed the app!');
+        init();
+      }
+    }
   }
 
   useEffect(() => {
@@ -31,7 +37,7 @@ const Main = (props) => {
   }, []);
   console.log('installed apps', installedApps)
   return (
-    <div className='bg-extra-light-gray p-4' testId='Index'>
+    <div className='p-4' testId='Index'>
       <h3 className=''>Installed Apps for the site.</h3>
       <div>
         {

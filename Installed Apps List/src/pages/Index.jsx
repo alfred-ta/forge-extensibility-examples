@@ -2,15 +2,15 @@ import React, { useState, useEffect } from 'react';
 const Index = (props) => {
   
   const init = () => {
-    forgeSDK.register.tab({
+    window.forgeSDK.register.tab({
       component: 'main',
-      name: "vulcan-chart",
-      label: "Vulcan Chart",
+      name: "user-installed-apps",
+      label: "User Installed Apps",
       height: "500",
     });
   };
   useEffect(() => {
-    forgeSDK.onReady(init);
+    window.forgeSDK.onReady(init);
   }, []);
   return (
     <div className='bg-extra-light-gray' testId='Index'>

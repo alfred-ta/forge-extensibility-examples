@@ -26,8 +26,6 @@ Parse.Cloud.define("getUserInstalledApps", async (request) => {
   const { siteId, userEmail } = request.params;
   try {
     const { list: apps, id } = await getUserInstalledApps(siteId, userEmail);
-
-    console.log('****************', id);
     
     return { status: 'success', apps, id };
   } catch (error) {
@@ -40,9 +38,9 @@ Parse.Cloud.define("getUserInstalledApps", async (request) => {
 Parse.Cloud.define("uninstallApp", async (request) => {
   const { siteId, appId, objectId } = request.params;
   try {
-    await uninstallApp(siteId, objectId, appId);
+    const removedId = await uninstallApp(siteId, objectId, appId);
 
-    return { status: 'success' };
+    return { status: 'success', removedId };
   } catch (error) {
     console.error('inside uninstallApp', error);
     return { status: 'error', error };
@@ -1244,15 +1242,14 @@ const uninstallApp = async(siteId, objectId, appId) => {
     const app = await query.first();
     if (app) {
       let appsList = app.get('AppsList');
-      console.log('======================apps list', appsList);
       if (appsList && appsList.length > 0) {
-        appsList = appsList.filter(obj => obj.objectId !== appId);
+        appsList = appsList.filter(obj => obj.id !== appId);
       }
       
-      console.log('apps list-----------------------------', appsList);
-
       app.set('AppsList', appsList);
       await app.save();
+
+      return objectId;
     }
 
   } catch(error) {
