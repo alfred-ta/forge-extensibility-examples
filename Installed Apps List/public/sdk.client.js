@@ -1,6 +1,7 @@
 'use strict';
 window.forgeSDK = (() => {
   const CONNECTED_EV = new Event('connected');
+  let initialData = {};
   const callbacks = {};
   const uuidv4 = () => {
     let d = new Date().getTime();
@@ -61,12 +62,11 @@ window.forgeSDK = (() => {
 
   eventer(messageEvent, function(e) {
     const { data: payload } = e;
-    console.log('receive:', payload);
-    
-    if (payload.type === 'CONNECT' && !extensionId) {
-      initialize(payload);
-      return;
+    if (payload.type === 'CONNECT' && !extensionId) {	
+      initialize(payload);	
+      return;	
     }
+
     if (payload.type == 'CALLBACK') {
       const func = callbacks[payload.callbackId];
 
@@ -83,15 +83,16 @@ window.forgeSDK = (() => {
   });
   
   const initialize = (options) => {
-    const { src, extensionId: contextId } = options;
+    const { src, extensionId: contextId, initialArgs } = options;
     extensionId = contextId;
     siteSrc = src;
+    initialData = initialArgs;
+
     window.dispatchEvent(CONNECTED_EV);
   }
 
   // Send
   const send = (keyName, kind, ...args) => {
-    console.log('sending message', keyName, kind, args)
     window.top.postMessage({ args: [...args], action: keyName, kind, extensionId }, '*');
   }
 
@@ -124,13 +125,12 @@ window.forgeSDK = (() => {
   };
 
   const onReady = initExtension => {
-    console.log("inside extenstion on ready", extensionId, initExtension);
     if (isReady() && extensionId) {
-      initExtension();
+      initExtension(initialData);
       return;
     }
 
-    window.addEventListener('connected', initExtension);
+    window.addEventListener('connected', () => initExtension(initialData));
   };
 
   
@@ -374,6 +374,8 @@ window.forgeSDK = (() => {
   sendMutation("sites/delete", ...args);
 },"deleteProjectsSite":(...args) => {
   sendMutation("sites/deleteProjectsSite", ...args);
+},"setActiveExtension":(...args) => {
+  sendMutation("sites/setActiveExtension", ...args);
 }},"versions":{"setList":(...args) => {
   sendMutation("versions/setList", ...args);
 },"delete":(...args) => {

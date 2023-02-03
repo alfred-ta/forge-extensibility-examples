@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 const Index = (props) => {
   
-  const init = () => {
+  const init = (args) => {
+    console.log('the data from server', args);
     window.forgeSDK.register.tab({
       component: 'main',
       name: "user-installed-apps",
