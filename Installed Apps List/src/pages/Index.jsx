@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useContext } from 'react';
+import Context from './Context';
 const Index = (props) => {
-  
+  const { setServerUserId } = useContext(Context);
   const init = (args) => {
-    console.log('the data from server', args);
+
+    if (args.currentUser && args.currentUser.id) {
+      setServerUserId(args.currentUser.id);
+    }
     window.forgeSDK.register.tab({
       component: 'main',
       name: "user-installed-apps",

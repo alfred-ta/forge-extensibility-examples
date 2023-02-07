@@ -1,16 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import Parse from 'parse/dist/parse.min.js';
 import toast from 'react-hot-toast';
 
+import Context from './Context';
 import { initParse } from '@/lib';
-const Main = (props) => {
+
+const Main = () => {
   const [installedApps, setInstalledApps] = useState([]);
   const [objectId, setObjectId] = useState('');
+  const { serverUserId } = useContext(Context);
   const init = async () => {
     initParse();
     const res = await Parse.Cloud.run('getUserInstalledApps', {
       siteId: import.meta.env.VITE_SITE_ID,
-      userEmail: 'alfredtakala@yandex.com'
+      userId: serverUserId
     });
     if (res.status === 'success') {
       setInstalledApps(res.apps || []);
