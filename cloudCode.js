@@ -33,7 +33,6 @@ const getUserInstalledApps = async(siteId, userId) => {
 
     let list = [];
     let id = null;
-    console.log('**************', record, USER_INSTALLED_APPS_MODEL_NAME, userId);
     if (record && record.get('AppsList') && record.get('AppsList')[0]) {
       id = record.id;
       appsObjects = record.get('AppsList');
@@ -134,7 +133,7 @@ const getAppsList = async(siteId, developerIds, status) => {
     const list = await getAppListFromObjects(appObjects);
     return list;
   } catch(error) {
-    console.error('inside getPublicAppsList', error);
+    console.error('inside getAppsList', error);
     throw error;
   }
 }

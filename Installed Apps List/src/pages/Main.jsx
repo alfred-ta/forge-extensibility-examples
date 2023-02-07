@@ -2,18 +2,19 @@ import React, { useState, useEffect, useContext } from 'react';
 import Parse from 'parse/dist/parse.min.js';
 import toast from 'react-hot-toast';
 
-import Context from './Context';
 import { initParse } from '@/lib';
+import { useQuery } from '@/lib/useQuery'
 
 const Main = () => {
   const [installedApps, setInstalledApps] = useState([]);
   const [objectId, setObjectId] = useState('');
-  const { serverUserId } = useContext(Context);
+
+  let query = useQuery();
+
   const init = async () => {
     initParse();
     const res = await Parse.Cloud.run('getUserInstalledApps', {
-      siteId: import.meta.env.VITE_SITE_ID,
-      userId: serverUserId
+      userId: query.get('userId')
     });
     if (res.status === 'success') {
       setInstalledApps(res.apps || []);
@@ -36,9 +37,9 @@ const Main = () => {
   }
 
   useEffect(() => {
-    init();
-  }, []);
-  console.log('installed apps', installedApps)
+    if (query.get('userId')) init();
+  }, [query]);
+
   return (
     <div className='p-4' testId='Index'>
       <h3 className=''>Installed Apps for the site.</h3>

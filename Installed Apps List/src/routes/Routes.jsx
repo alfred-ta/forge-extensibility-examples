@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   BrowserRouter as Router,
   Route,
@@ -8,19 +8,15 @@ import {
 import Index from '@/pages/Index';
 import Main from '@/pages/Main';
 
-import Context from './Context';
 
-function Routes(props) {
-  const [serverUserId, setServerUserId] = useState('');
+function Routes() {
   return (
-    <Context.Provider value={{ serverUserId, setServerUserId }}>
-      <Router>
-        <RouterRoutes>
-          <Route path='/' element={<Index />} />
-          <Route path='/main' element={<Main />} />
-        </RouterRoutes>
-      </Router>
-    </Context.Provider>
+    <Router>
+      <RouterRoutes>
+        <Route path='/' element={<Index />} />
+        <Route path='/main' element={<Main />} />
+      </RouterRoutes>
+    </Router>
   );
 }
 
