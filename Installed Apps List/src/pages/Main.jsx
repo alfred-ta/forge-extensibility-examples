@@ -3,13 +3,10 @@ import Parse from 'parse/dist/parse.min.js';
 import toast from 'react-hot-toast';
 
 import { initParse } from '@/lib';
-import { useQuery } from '@/lib/useQuery'
 
 const Main = () => {
   const [installedApps, setInstalledApps] = useState([]);
   const [objectId, setObjectId] = useState('');
-
-  let query = useQuery();
 
   const init = async (args) => {
     initParse();
@@ -36,16 +33,9 @@ const Main = () => {
     }
   }
 
-  // useEffect(() => {
-  //   if (query.get('userId')) init();
-  // }, [query]);
-
   useEffect(() => {
-    console.log('should check install / uninstall next', window.forgeSDK);
     window.forgeSDK.onReady(init);
   }, []);
-
-  console.log('main html-------- =======');
 
   return (
     <div className='p-4' testId='Index'>
