@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import Parse from 'parse/dist/parse.min.js';
 import toast from 'react-hot-toast';
 
@@ -11,10 +11,10 @@ const Main = () => {
 
   let query = useQuery();
 
-  const init = async () => {
+  const init = async (args) => {
     initParse();
     const res = await Parse.Cloud.run('getUserInstalledApps', {
-      userId: query.get('userId')
+      userId: args?.currentUser?.id
     });
     if (res.status === 'success') {
       setInstalledApps(res.apps || []);
@@ -36,9 +36,16 @@ const Main = () => {
     }
   }
 
+  // useEffect(() => {
+  //   if (query.get('userId')) init();
+  // }, [query]);
+
   useEffect(() => {
-    if (query.get('userId')) init();
-  }, [query]);
+    console.log('should check install / uninstall next', window.forgeSDK);
+    window.forgeSDK.onReady(init);
+  }, []);
+
+  console.log('main html-------- =======');
 
   return (
     <div className='p-4' testId='Index'>

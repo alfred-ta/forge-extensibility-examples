@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
 
 const Index = () => {
-  const init = (args) => {
+  const init = () => {
     window.forgeSDK.register.tab({
-      component: `main?userId=${args?.currentUser?.id || ''}`,
+      component: `/main`,
       name: "user-installed-apps",
       label: "User Installed Apps",
       height: "500",
