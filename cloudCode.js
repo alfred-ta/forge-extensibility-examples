@@ -39,10 +39,44 @@ const getUserInstalledApps = async(siteId, userId) => {
       list = getPlainAppsList(appsObjects);
     }
     
-    return { id, list, USER_INSTALLED_APPS_MODEL_NAME };
+    return { id, list };
 
   } catch(error) {
     console.error('inside getUserInstalledApps function', error);
+    throw error;
+  }
+}
+
+
+const getSiteInstalledApps = async(siteId) => {
+  try {
+    // get site name Id and generate MODEL names based on that
+    const siteNameId = await getDefaultSiteNameId();
+    if (siteNameId === null) {
+      throw { message: 'Invalid siteId' };
+    }
+
+    const SITE_INSTALLED_APPS_MODEL_NAME = `ct____${siteNameId}____SiteApps`;
+
+    const query = new Parse.Query(SITE_INSTALLED_APPS_MODEL_NAME);
+    query.equalTo('t__status', 'Published');
+    query.equalTo('SiteId', siteId.toString());
+    query.include('AppsList');
+    
+    const record = await query.first();
+
+    let list = [];
+    let id = null;
+    if (record && record.get('AppsList') && record.get('AppsList')[0]) {
+      id = record.id;
+      appsObjects = record.get('AppsList');
+      list = getPlainAppsList(appsObjects);
+    }
+    
+    return { id, list };
+
+  } catch(error) {
+    console.error('inside getSiteInstalledApps function', error);
     throw error;
   }
 }
@@ -81,64 +115,7 @@ const uninstallApp = async(siteId, objectId, appId) => {
   }
 }
 
-
 const getAppsList = async(siteId, developerIds, status) => {
-  try {
-    // get site name Id and generate MODEL names based on that
-    let siteNameId;
-    if (siteId) siteNameId= await getSiteNameId(siteId); else siteNameId = await getDefaultSiteNameId();
-    if (siteNameId === null) {
-      throw { message: 'Invalid siteId' };
-    }
-
-    const DEVELOPER_APP_MODEL_NAME = `ct____${siteNameId}____Developer_App`;
-    const DEVELOPER_APP_DATA_MODEL_NAME = `ct____${siteNameId}____Developer_App_Data`;
-    const DEVELOPER_MODEL_NAME = `ct____${siteNameId}____Developer`;
-
-    const query = new Parse.Query(DEVELOPER_APP_MODEL_NAME);
-    query.equalTo('t__status', 'Published');
-    query.include('Data');
-    query.include('Content');
-    query.include('Content.Key_Image');
-    query.include(['Content.Screenshots']);
-    query.include(['Content.Catgories']);
-    query.include(['Data.Dashboard_Setting']);
-    query.include(['Data.Dashboard_Setting.SVG_Icon']);
-    query.include(['Data.Capabilities']);
-    query.include('Data.Facilitator_Mode');
-    query.include('Data.Permissions');
-    query.include('Data.Sandbox_Permissions');
-
-
-    query.include('Developer');
-    query.include('Security');
-
-    
-
-    if (developerIds && developerIds.length > 0) {
-      const developersQuery = new Parse.Query(DEVELOPER_MODEL_NAME);
-      developersQuery.containedIn('objectId', developerIds);
-      query.matchesQuery('Developer', developersQuery);
-    }
-    
-
-    if (!!status) {
-      const readyForSaleQuery = new Parse.Query(DEVELOPER_APP_DATA_MODEL_NAME);
-      readyForSaleQuery.equalTo('Status', status);
-      query.matchesQuery('Data', readyForSaleQuery);
-    }
-    
-    const appObjects = await query.find({ useMasterKey: true });
-    
-    const list = await getAppListFromObjects(appObjects);
-    return list;
-  } catch(error) {
-    console.error('inside getAppsList', error);
-    throw error;
-  }
-}
-
-const getPluginsList = async(siteId, developerIds, status) => {
   try {
     // get site name Id and generate MODEL names based on that
     let siteNameId;
@@ -198,7 +175,7 @@ const getPluginsList = async(siteId, developerIds, status) => {
     return lst;
 
   } catch(error) {
-    console.error('inside getPluginList', error);
+    console.error('inside getAppList', error);
     throw error;
   }
 }
@@ -269,11 +246,23 @@ Parse.Cloud.define('getSiteNameId', async (request) => {
 Parse.Cloud.define("getUserInstalledApps", async (request) => {
   const { siteId, userId } = request.params;
   try {
-    const { list: apps, id, USER_INSTALLED_APPS_MODEL_NAME } = await getUserInstalledApps(siteId, userId);
+    const { list: apps, id } = await getUserInstalledApps(siteId, userId);
     
-    return { status: 'success', apps, id, USER_INSTALLED_APPS_MODEL_NAME };
+    return { status: 'success', apps, id };
   } catch (error) {
     console.error('inside getUserInstalledApps', error);
+    return { status: 'error', error };
+  }
+});
+
+Parse.Cloud.define("getSiteInstalledApps", async (request) => {
+  const { siteId } = request.params;
+  try {
+    const { list: apps, id } = await getSiteInstalledApps(siteId);
+    
+    return { status: 'success', apps, id };
+  } catch (error) {
+    console.error('inside getSiteInstalledApps', error);
     return { status: 'error', error };
   }
 });
@@ -305,14 +294,14 @@ Parse.Cloud.define("getAppsList", async (request) => {
 });
 
 
-Parse.Cloud.define("getPluginsList", async (request) => {
+Parse.Cloud.define("getAppsList", async (request) => {
   const { siteId, filter: { developer = [], status } } = request.params;
   try {
-    const apps = await getPluginsList(siteId, developer, status);
+    const apps = await getAppsList(siteId, developer, status);
     
     return { status: 'success', apps };
   } catch (error) {
-    console.error('inside getPluginsList', error);
+    console.error('inside getAppsList', error);
     return { status: 'error', error };
   }
 });
