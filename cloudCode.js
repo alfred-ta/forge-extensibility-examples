@@ -49,6 +49,46 @@ const getInstalledApps = async(params) => {
 }
 
 
+const installApp = async({ appId, siteId, userId }) => {
+  try {
+    // get site name Id and generate MODEL names based on that
+    const siteNameId = await getDefaultSiteNameId();
+    if (siteNameId === null) {
+      throw { message: 'Invalid siteId' };
+    }
+
+    const DEVELOPER_APP_MODEL_NAME = `ct____${siteNameId}____Developer_App`;
+    const DeveloperAppModel = Parse.Object.extend(DEVELOPER_APP_MODEL_NAME);
+    const developerApp = new DeveloperAppModel();
+    developerApp.id = appId;
+
+    const USER_INSTALLED_APPS_MODEL_NAME = `ct____${siteNameId}____InstalledApps`;
+    const query = new Parse.Query(USER_INSTALLED_APPS_MODEL_NAME);
+    query.equalTo('t__status', 'Published');
+    if (siteId) query.equalTo('SiteId', siteId.toString());
+    if (userId) query.equalTo('UserId', userId.toString());
+    
+    const record = await query.first();
+
+    if (record) {
+      let appsList = record.get('AppsList');
+      // if (appsList && appsList.length > 0) {
+      //   appsList = appsList.filter(obj => obj.id !== appId);
+      // }
+      appsList.push(developerApp);     
+      record.set('AppsList', appsList);
+      await record.save();
+
+      return record.id;
+    }
+
+  } catch(error) {
+    console.error('inside installApp function', error);
+    throw error;
+  }
+}
+
+
 const uninstallApp = async({ appId, siteId, userId }) => {
   try {
     // get site name Id and generate MODEL names based on that
@@ -252,6 +292,19 @@ Parse.Cloud.define("uninstallApp", async (request) => {
     return { status: 'success', removedId };
   } catch (error) {
     console.error('inside uninstallApp', error);
+    return { status: 'error', error };
+  }
+});
+
+
+Parse.Cloud.define("installApp", async (request) => {
+  // const { appId, objectId } = request.params;
+  try {
+    const installedId = await installApp(request.params);
+
+    return { status: 'success', installedId };
+  } catch (error) {
+    console.error('inside installApp', error);
     return { status: 'error', error };
   }
 });
