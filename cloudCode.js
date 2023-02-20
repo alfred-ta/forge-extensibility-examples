@@ -13,42 +13,8 @@ const getSiteNameId = async(siteId) => {
   return siteRecord.get('nameId');
 }
 
-const getUserInstalledApps = async(siteId, userId) => {
-  try {
-    // get site name Id and generate MODEL names based on that
-    let siteNameId;
-    if (siteId) siteNameId= await getSiteNameId(siteId); else siteNameId = await getDefaultSiteNameId();
-    if (siteNameId === null) {
-      throw { message: 'Invalid siteId' };
-    }
-
-    const USER_INSTALLED_APPS_MODEL_NAME = `ct____${siteNameId}____UserInstalledApps`;
-
-    const query = new Parse.Query(USER_INSTALLED_APPS_MODEL_NAME);
-    query.equalTo('t__status', 'Published');
-    query.equalTo('UserId', userId.toString());
-    query.include('AppsList');
-    
-    const record = await query.first();
-
-    let list = [];
-    let id = null;
-    if (record && record.get('AppsList') && record.get('AppsList')[0]) {
-      id = record.id;
-      appsObjects = record.get('AppsList');
-      list = getPlainAppsList(appsObjects);
-    }
-    
-    return { id, list };
-
-  } catch(error) {
-    console.error('inside getUserInstalledApps function', error);
-    throw error;
-  }
-}
-
-
-const getSiteInstalledApps = async(siteId) => {
+const getInstalledApps = async(params) => {
+  const { siteId, userId } = params;
   try {
     // get site name Id and generate MODEL names based on that
     const siteNameId = await getDefaultSiteNameId();
@@ -56,11 +22,12 @@ const getSiteInstalledApps = async(siteId) => {
       throw { message: 'Invalid siteId' };
     }
 
-    const SITE_INSTALLED_APPS_MODEL_NAME = `ct____${siteNameId}____SiteApps`;
+    const INSTALLED_APPS_MODEL_NAME = `ct____${siteNameId}____InstalledApps`;
 
-    const query = new Parse.Query(SITE_INSTALLED_APPS_MODEL_NAME);
+    const query = new Parse.Query(INSTALLED_APPS_MODEL_NAME);
     query.equalTo('t__status', 'Published');
-    query.equalTo('SiteId', siteId.toString());
+    if (siteId) query.equalTo('SiteId', siteId.toString());
+    if (userId) query.equalTo('UserId', userId.toString());
     query.include('AppsList');
     
     const record = await query.first();
@@ -76,27 +43,36 @@ const getSiteInstalledApps = async(siteId) => {
     return { id, list };
 
   } catch(error) {
-    console.error('inside getSiteInstalledApps function', error);
+    console.error('inside getInstalledApps function', error);
     throw error;
   }
 }
 
 
-const uninstallApp = async(siteId, objectId, appId) => {
+const uninstallApp = async({ appId, siteId, userId }) => {
   try {
     // get site name Id and generate MODEL names based on that
-    let siteNameId;
-    if (siteId) siteNameId= await getSiteNameId(siteId); else siteNameId = await getDefaultSiteNameId();
+    const siteNameId = await getDefaultSiteNameId();
     if (siteNameId === null) {
       throw { message: 'Invalid siteId' };
     }
 
-    const USER_INSTALLED_APPS_MODEL_NAME = `ct____${siteNameId}____UserInstalledApps`;
+    const USER_INSTALLED_APPS_MODEL_NAME = `ct____${siteNameId}____InstalledApps`;
+    const DEVELOPER_APP_MODEL_NAME = `ct____${siteNameId}____Developer_App`;
+    const DeveloperAppModel = Parse.Object.extend(DEVELOPER_APP_MODEL_NAME);
+
+    const developerApp = new DeveloperAppModel();
+    developerApp.id = appId;
 
     const query = new Parse.Query(USER_INSTALLED_APPS_MODEL_NAME);
-    query.equalTo('objectId', objectId);
+
+    query.equalTo('AppsList', developerApp);
+    query.equalTo('t__status', 'Published');
+    if (siteId) query.equalTo('SiteId', siteId.toString());
+    if (userId) query.equalTo('UserId', userId.toString());
     
     const app = await query.first();
+
     if (app) {
       let appsList = app.get('AppsList');
       if (appsList && appsList.length > 0) {
@@ -106,7 +82,7 @@ const uninstallApp = async(siteId, objectId, appId) => {
       app.set('AppsList', appsList);
       await app.save();
 
-      return objectId;
+      return app.id;
     }
 
   } catch(error) {
@@ -166,6 +142,7 @@ const getAppsList = async(siteId, developerIds, status) => {
           id: appObject.id,
           slug: appObject.get('Slug'),
           url: appObject.get('URL'),
+          kind: appObject.get('Kind'),
           developer,
           developerContent,
           developerData,
@@ -180,11 +157,10 @@ const getAppsList = async(siteId, developerIds, status) => {
   }
 }
 
-const getPublishedAppsList = async(siteId) => {
+const getPublishedAppsList = async() => {
   try {
     // get site name Id and generate MODEL names based on that
-    let siteNameId;
-    if (siteId) siteNameId= await getSiteNameId(siteId); else siteNameId = await getDefaultSiteNameId();
+    const siteNameId = await getDefaultSiteNameId();
     if (siteNameId === null) {
       throw { message: 'Invalid siteId' };
     }
@@ -244,9 +220,9 @@ Parse.Cloud.define('getSiteNameId', async (request) => {
 });
 
 Parse.Cloud.define("getUserInstalledApps", async (request) => {
-  const { siteId, userId } = request.params;
+  const { userId } = request.params;
   try {
-    const { list: apps, id } = await getUserInstalledApps(siteId, userId);
+    const { list: apps, id } = await getInstalledApps({ siteId: null, userId });
     
     return { status: 'success', apps, id };
   } catch (error) {
@@ -258,7 +234,7 @@ Parse.Cloud.define("getUserInstalledApps", async (request) => {
 Parse.Cloud.define("getSiteInstalledApps", async (request) => {
   const { siteId } = request.params;
   try {
-    const { list: apps, id } = await getSiteInstalledApps(siteId);
+    const { list: apps, id } = await getInstalledApps({ siteId, userId: null });
     
     return { status: 'success', apps, id };
   } catch (error) {
@@ -269,9 +245,9 @@ Parse.Cloud.define("getSiteInstalledApps", async (request) => {
 
 
 Parse.Cloud.define("uninstallApp", async (request) => {
-  const { siteId, appId, objectId } = request.params;
+  // const { appId, objectId } = request.params;
   try {
-    const removedId = await uninstallApp(siteId, objectId, appId);
+    const removedId = await uninstallApp(request.params);
 
     return { status: 'success', removedId };
   } catch (error) {
@@ -308,10 +284,9 @@ Parse.Cloud.define("getAppsList", async (request) => {
 
 
 
-Parse.Cloud.define("publishedAppsList", async (request) => {
-  const { siteId } = request.params;
+Parse.Cloud.define("publishedAppsList", async () => {
   try {
-    const publishedApps = await getPublishedAppsList(siteId);
+    const publishedApps = await getPublishedAppsList();
     
     return { status: 'success', apps: publishedApps };
   } catch (error) {
@@ -499,6 +474,7 @@ const getAppListFromObjects = async (appObjects) => {
         name: appObject.get('Name'),
         slug: appObject.get('Slug'),
         url: appObject.get('URL'),
+        kind: appObject.get('Kind'),
         developer,
         developerContent,
         developerData,
@@ -616,11 +592,13 @@ const getAppDetail = async(siteId, appSlug) => {
       name: appObject.get('Name'),
       slug: appObject.get('Slug'),
       url: appObject.get('URL'),
+      siteId: appObject.get('SiteId'),
+      userId: appObject.get('UserId'),
       developer,
       developerContent,
       developerData,
       developerSecurity,
-      siteInfo
+      siteInfo,
     }
   } catch(error) {
     console.error('inside getAppDetal', error);
@@ -694,6 +672,8 @@ const getDeveloperAppById = async(siteId, appId) => {
       name: appObject.get('Name'),
       slug: appObject.get('Slug'),
       url: appObject.get('URL'),
+      siteId: appObject.get('SiteId'),
+      userId: appObject.get('UserId'),
       developer,
       developerContent,
       developerData,
