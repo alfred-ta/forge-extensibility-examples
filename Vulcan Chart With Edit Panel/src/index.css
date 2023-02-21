@@ -55,3 +55,7 @@ body,
   @apply fixed inset-0 flex items-center justify-center bg-extra-light-gray bg-opacity-60;
   z-index: 1000;
 }
+
+.flex-2 {
+  flex: 2;
+}

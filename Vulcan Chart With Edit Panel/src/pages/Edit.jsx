@@ -1,58 +1,54 @@
 import React, { useState, useEffect } from 'react';
 import Parse from 'parse/dist/parse.min.js';
 import toast from 'react-hot-toast';
+import Button from '@/components/Button'
+import Input from '@/components/Input'
 
 import { initParse } from '@/lib';
 
-const Main = () => {
-  const [installedApps, setInstalledApps] = useState([]);
-  const [objectId, setObjectId] = useState('');
+const Edit = () => {
+  const [chartURL, setChartURL] = useState('');
+  const [siteId, setSiteId] = useState('');
 
-  const init = async (args) => {
+
+  const init =(args) => {
     initParse();
-    const res = await Parse.Cloud.run('getUserInstalledApps', {
-      userId: args?.currentUser?.id
-    });
-    if (res.status === 'success') {
-      setInstalledApps(res.apps || []);
-      setObjectId(res.id);
-    }
+    setSiteId(args?.currentSite?.id);
   };
 
-  const onUninstallApp = async (app) => {
-    if (window.confirm(`Are you sure to remove the app ${app.name}.`)) {
-      const res = await Parse.Cloud.run('uninstallApp', {
-        siteId: import.meta.env.VITE_SITE_ID,
-        objectId,
-        appId: app.id
-      })
-      if (res.status === 'success' && res.removedId) {
-        toast('Successfully removed the app!');
-        init();
-      }
+  const getChartURL = async() => {
+    const res = await Parse.Cloud.run('getChartURL', {
+      siteId
+    });
+    if (res.status === 'success') {
+      setChartURL(res.url);
     }
   }
+
+  const onSave = async() => {
+    if (!url || !siteIdRef.current) {
+      toast.warning('Insufficient information');
+    }
+  }
+
+  useEffect(() => {
+    if (siteId) getChartURL();
+  }, [siteId]);
 
   useEffect(() => {
     window.forgeSDK.onReady(init);
   }, []);
 
+
   return (
     <div className='p-4' testId='Index'>
-      <h3 className=''>Installed Apps for the site.</h3>
-      <div>
-        {
-          installedApps.map((app, index) => (<div key={app.id} className='flex justify-between p-2'>
-            <div className='flex'>
-              <div className='mr-4'>{index + 1}.</div>
-              <div>{app.name}</div>
-            </div>
-            <div className='cursor-pointer text-blue-50' onClick={() => onUninstallApp(app)}>Remove</div>
-          </div>))
-        }
+      <h3 className='mb-10'>Vulcan Chart Edit Panel.</h3>
+      <Input name='url' label='URL' value={chartURL} onChange={setChartURL} />
+      <div className='text-center'>
+        <Button disabled={!siteId || !url} onClick={onSave}>Save</Button>
       </div>
     </div>
   );
 };
 
-export default Main;
+export default Edit;
