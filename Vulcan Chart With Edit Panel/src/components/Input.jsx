@@ -5,6 +5,7 @@ const Input = (props) => {
   const {
     name,
     label,
+    onChange,
     ...rest
   } = props;
   return (
@@ -18,6 +19,7 @@ const Input = (props) => {
       <input
         type='text'
         className='px-3 py-2 border border-solid border-gray-40 rounded-lg w-full leading-5 text-sm flex-2'
+        onChange={(e) => onChange(e.target.value)}
         {...rest}
       />
     </div>
