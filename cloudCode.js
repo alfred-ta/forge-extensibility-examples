@@ -28,16 +28,17 @@ const getInstalledApps = async(params) => {
     query.equalTo('t__status', 'Published');
     if (siteId) query.equalTo('SiteId', siteId.toString());
     if (userId) query.equalTo('UserId', userId.toString());
-    query.include('AppsList');
+    query.include('InstanceList');
+    query.include('InstanceList.Developer_App');
     
     const record = await query.first();
 
     let list = [];
     let id = null;
-    if (record && record.get('AppsList') && record.get('AppsList')[0]) {
+    if (record && record.get('InstanceList') && record.get('InstanceList')[0]) {
       id = record.id;
-      appsObjects = record.get('AppsList');
-      list = getPlainAppsList(appsObjects);
+      instanceObjects = record.get('InstanceList');
+      list = getInstanceList(instanceObjects);
     }
     
     return { id, list };
@@ -539,16 +540,29 @@ const getAppListFromObjects = async (appObjects) => {
 }
 
 
-const getPlainAppsList = (appObjects) => {
-  const list = appObjects.map((appObject) => {   
+const getInstanceList = (instanceObjects) => {
+  const list = instanceObjects.map((instanceObject) => {   
+    let developerApp = null;
+    if (instanceObject.get('Developer_App') && instanceObject.get('Developer_App')[0]) 
+      developerApp = getDeveloperAppBrief(instanceObject.get('Developer_App')[0]);
     return {
-      id: appObject.id,
-      name: appObject.get('Name'),
-      slug: appObject.get('Slug'),
-      url: appObject.get('URL')
+      id: instanceObject.id,
+      slug: instanceObject.get('Slug'),
+      developerApp,
+      param: instanceObject.get('Param')
     };
   });
-  return list.sort((a, b) => (a.name > b.name ? 1 : -1));
+  return list.sort((a, b) => (a.developerApp?.name > b.developerApp?.name ? 1 : -1));
+}
+
+
+const getDeveloperAppBrief = (appObject) => {
+  return {
+    id: appObject.id,
+    name: appObject.get('Name'),
+    slug: appObject.get('Slug'),
+    url: appObject.get('URL')
+  };
 }
 
 Parse.Cloud.define("searchApps", async (request) => {
