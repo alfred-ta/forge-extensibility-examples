@@ -35,9 +35,7 @@ window.forgeSDK = (() => {
 
   class RegisterWrapper {
     callFunc(endpoint, ...args) {
-      if (args[0].component) {
-        args[0].siteSrc = siteSrc;
-      }
+      args[0].siteSrc = siteSrc;
 
       if (args[0].onClick) {
         //Save in callback array function which should be called after function response received
