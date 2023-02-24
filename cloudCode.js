@@ -90,7 +90,8 @@ const installApp = async({ appId, siteId, userId }) => {
 }
 
 
-const uninstallApp = async({ appId, siteId, userId }) => {
+const uninstallApp = async(params) => {
+  const { instanceId, userId, siteId } = params;
   try {
     // get site name Id and generate MODEL names based on that
     const siteNameId = await getDefaultSiteNameId();
@@ -98,29 +99,21 @@ const uninstallApp = async({ appId, siteId, userId }) => {
       throw { message: 'Invalid siteId' };
     }
 
-    const USER_INSTALLED_APPS_MODEL_NAME = `ct____${siteNameId}____InstalledApps`;
-    const DEVELOPER_APP_MODEL_NAME = `ct____${siteNameId}____Developer_App`;
-    const DeveloperAppModel = Parse.Object.extend(DEVELOPER_APP_MODEL_NAME);
-
-    const developerApp = new DeveloperAppModel();
-    developerApp.id = appId;
-
-    const query = new Parse.Query(USER_INSTALLED_APPS_MODEL_NAME);
-
-    query.equalTo('AppsList', developerApp);
+    const INSTALLED_APPS_MODEL_NAME = `ct____${siteNameId}____InstalledApps`;
+    const query = new Parse.Query(INSTALLED_APPS_MODEL_NAME);
     query.equalTo('t__status', 'Published');
-    if (siteId) query.equalTo('SiteId', siteId.toString());
     if (userId) query.equalTo('UserId', userId.toString());
-    
+    if (siteId) query.equalTo('SiteId', siteId.toString());
+        
     const app = await query.first();
 
     if (app) {
-      let appsList = app.get('AppsList');
-      if (appsList && appsList.length > 0) {
-        appsList = appsList.filter(obj => obj.id !== appId);
+      instanceList = app.get('InstanceList');
+      if (instanceList && instanceList.length > 0) {
+        instanceList = instanceList.filter(obj => obj.id !== instanceId);
       }
       
-      app.set('AppsList', appsList);
+      app.set('InstanceList', instanceList);
       await app.save();
 
       return app.id;
@@ -286,7 +279,6 @@ Parse.Cloud.define("getSiteInstalledApps", async (request) => {
 
 
 Parse.Cloud.define("uninstallApp", async (request) => {
-  // const { appId, objectId } = request.params;
   try {
     const removedId = await uninstallApp(request.params);
 
