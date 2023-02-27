@@ -58,34 +58,80 @@ const installApp = async({ appId, siteId, userId }) => {
       throw { message: 'Invalid siteId' };
     }
 
-    const DEVELOPER_APP_MODEL_NAME = `ct____${siteNameId}____Developer_App`;
-    const DeveloperAppModel = Parse.Object.extend(DEVELOPER_APP_MODEL_NAME);
-    const developerApp = new DeveloperAppModel();
-    developerApp.id = appId;
-
     const USER_INSTALLED_APPS_MODEL_NAME = `ct____${siteNameId}____InstalledApps`;
     const query = new Parse.Query(USER_INSTALLED_APPS_MODEL_NAME);
     query.equalTo('t__status', 'Published');
     if (siteId) query.equalTo('SiteId', siteId.toString());
     if (userId) query.equalTo('UserId', userId.toString());
-    
+    query.include('InstanceList');
+    // query.find('InstanceList.AppsList');
     const record = await query.first();
-
     if (record) {
-      let appsList = record.get('AppsList');
-      // if (appsList && appsList.length > 0) {
-      //   appsList = appsList.filter(obj => obj.id !== appId);
-      // }
-      appsList.push(developerApp);     
-      record.set('AppsList', appsList);
+    // if (record && record.get('InstanceList') && record.get('InstanceList').length > 0) {
+      
+      let instanceList = record.get('InstanceList') || [];
+      // let appInstance = instanceList.find(obj => {
+      //   const appsList = obj.get('Developer_App');
+      //   console.log('====================', obj);
+      //   if (appsList) {
+      //     const appsIds = appsList.map(app => app.objectId);
+      //     console.log('apps ids', appsIds);
+      //     return (appsIds.includes(appId))
+      //   }
+      //   return false;
+      // });
+      // if (!appInstance) 
+      const appInstance = await createAppInstance(siteNameId, appId, 'site');
+      instanceList.push(appInstance);
+      record.set('InstanceList', instanceList);
       await record.save();
-
       return record.id;
+    // } else {
+    //   const APP_INSTANCE_MODEL_NAME = `ct____${siteNameId}____App_Instance`;
+    //   const appInstanceQuery = new Parse.Query(APP_INSTANCE_MODEL_NAME);
+    //   appInstanceQuery.equalTo('objectId', instanceId);
+
+    //   const appInstance = await appInstanceQuery.first();
+    //   const appsList = appInstance.get('AppsList');
+    //   appsList.push(developerApp);
+    //   appInstance.set('InstanceList', instanceList);
+    //   await appInstance.save();
+    //   return appInstance.id;
     }
 
   } catch(error) {
     console.error('inside installApp function', error);
     throw error;
+  }
+}
+
+
+const createAppInstance = async (siteNameId, developerAppId, kind = 'site') => {
+  const APP_INSTANCE_MODEL_NAME = `ct____${siteNameId}____App_Instance`;
+  const AppInstanceModel = Parse.Object.extend(APP_INSTANCE_MODEL_NAME);
+
+  const DEVELOPER_APP_MODEL_NAME = `ct____${siteNameId}____Developer_App`;
+  const developerAppQuery = new Parse.Query(DEVELOPER_APP_MODEL_NAME);
+  try {
+    developerAppQuery.equalTo('objectId', developerAppId)
+    const developerApp = await developerAppQuery.first();
+
+    const sampleAppInstanceQuery = new Parse.Query(APP_INSTANCE_MODEL_NAME);
+    const sampleAppInstance = await sampleAppInstanceQuery.first();
+
+    console.log('*******************', sampleAppInstance)
+
+    const appInstance = new AppInstanceModel();
+    appInstance.set('Developer_App', [developerApp]);
+    appInstance.set('t__status', 'Published');
+    appInstance.set('Slug', `${kind}-${developerApp.get('Slug')}_instance`);
+    appInstance.set('t__model', sampleAppInstance.get('t__model'));
+    appInstance.set('ACL', sampleAppInstance.get('ACL'));
+    appInstance.set('t__color', sampleAppInstance.get('t__color'));
+    await appInstance.save();
+    return appInstance;
+  } catch(error) {
+    console.error('inside createAppInstance function', error);
   }
 }
 
@@ -291,7 +337,6 @@ Parse.Cloud.define("uninstallApp", async (request) => {
 
 
 Parse.Cloud.define("installApp", async (request) => {
-  // const { appId, objectId } = request.params;
   try {
     const installedId = await installApp(request.params);
 
