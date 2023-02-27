@@ -130,7 +130,7 @@ const createAppInstance = async (siteNameId, developerAppId, kind = 'site') => {
     const appInstance = new AppInstanceModel();
     appInstance.set('Developer_App', [developerApp]);
     appInstance.set('t__status', 'Published');
-    appInstance.set('Slug', slug);
+    appInstance.set('slug', slug);
     appInstance.set('t__model', sampleAppInstance.get('t__model'));
     appInstance.set('ACL', sampleAppInstance.get('ACL'));
     appInstance.set('t__color', sampleAppInstance.get('t__color'));
@@ -144,6 +144,7 @@ const createAppInstance = async (siteNameId, developerAppId, kind = 'site') => {
 
 const uninstallApp = async(params) => {
   const { instanceId, userId, siteId } = params;
+  let query;
   try {
     // get site name Id and generate MODEL names based on that
     const siteNameId = await getDefaultSiteNameId();
@@ -152,7 +153,7 @@ const uninstallApp = async(params) => {
     }
 
     const INSTALLED_APPS_MODEL_NAME = `ct____${siteNameId}____InstalledApps`;
-    const query = new Parse.Query(INSTALLED_APPS_MODEL_NAME);
+    query = new Parse.Query(INSTALLED_APPS_MODEL_NAME);
     query.equalTo('t__status', 'Published');
     if (userId) query.equalTo('UserId', userId.toString());
     if (siteId) query.equalTo('SiteId', siteId.toString());
@@ -167,6 +168,12 @@ const uninstallApp = async(params) => {
       
       app.set('InstanceList', instanceList);
       await app.save();
+
+      const APP_INSTANCE_MODEL_NAME = `ct____${siteNameId}____App_Instance`;
+      query = new Parse.Query(APP_INSTANCE_MODEL_NAME);
+      query.equalTo('objectId', instanceId);
+      const appInstance = await query.first();
+      appInstance.destroy({useMasterKey: true});
 
       return app.id;
     }
