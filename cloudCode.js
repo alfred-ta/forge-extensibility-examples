@@ -141,6 +141,27 @@ const createAppInstance = async (siteNameId, developerAppId, kind = 'site') => {
   }
 }
 
+const updateAppInstance = async(instanceId, param) => {
+  try {
+    // get site name Id and generate MODEL names based on that
+    const siteNameId = await getDefaultSiteNameId();
+    if (siteNameId === null) {
+      throw { message: 'Invalid siteId' };
+    }
+
+    const APP_INSTANCE_MODEL_NAME = `ct____${siteNameId}____App_Instance`;
+    const query = new Parse.Query(APP_INSTANCE_MODEL_NAME);
+    query.equalTo('objectId', instanceId);
+    const appInstance = await query.first();
+    appInstance.set('Param', param);
+    await appInstance.save();
+    return appInstance;
+  } catch(error) {
+    console.error('inside updateAppInstance function', error);
+  }  
+}
+
+
 const getAppInstanceFromAppSlug = async (params) => {
   const { userId, siteId, appSlug } = params;
   let appInstance = null;
@@ -404,6 +425,17 @@ Parse.Cloud.define("installApp", async (request) => {
   }
 });
 
+Parse.Cloud.define("updateAppInstance", async (request) => {
+  const { instanceId, param } = request.params;
+  try {
+    const instanceDetail = await updateAppInstance(instanceId, param);
+
+    return { status: 'success', instanceDetail };
+  } catch (error) {
+    console.error('inside updateAppInstance', error);
+    return { status: 'error', error };
+  }
+});
 
 Parse.Cloud.define("getAppsList", async (request) => {
   const { siteId, filter: { developer = [], status } } = request.params;
@@ -648,7 +680,6 @@ const getInstanceList = (instanceObjects) => {
   });
   return list.sort((a, b) => (a.developerApp?.name > b.developerApp?.name ? 1 : -1));
 }
-
 
 const getDeveloperAppBrief = (appObject) => {
   return {
