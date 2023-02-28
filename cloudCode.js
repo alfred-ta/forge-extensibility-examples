@@ -141,6 +141,37 @@ const createAppInstance = async (siteNameId, developerAppId, kind = 'site') => {
   }
 }
 
+const getAppInstanceFromAppSlug = async (params) => {
+  const { userId, siteId, appSlug } = params;
+  let appInstance = null;
+  try {
+    // get site name Id and generate MODEL names based on that
+    const siteNameId = await getDefaultSiteNameId();
+    if (siteNameId === null) {
+      throw { message: 'Invalid siteId' };
+    }
+
+    const INSTALLED_APPS_MODEL_NAME = `ct____${siteNameId}____InstalledApps`;
+    const query = new Parse.Query(INSTALLED_APPS_MODEL_NAME);
+    query.equalTo('t__status', 'Published');
+    if (userId) query.equalTo('UserId', userId.toString());
+    if (siteId) query.equalTo('SiteId', siteId.toString());
+    query.include('InstanceList');
+    query.include('InstanceList.Developer_App');
+    const record = await query.first();
+
+    if (record) {
+      const instanceObjects = record.get('InstanceList');
+      const instanceList = getInstanceList(instanceObjects);
+      appInstance = instanceList.find(instance => instance.developerApp?.slug === appSlug);
+    }
+
+  } catch(error) {
+    console.error('inside getAppInstanceFromAppSlug function', error);
+  }
+
+  return appInstance;
+}
 
 const uninstallApp = async(params) => {
   const { instanceId, userId, siteId } = params;
@@ -335,6 +366,19 @@ Parse.Cloud.define("getSiteInstalledApps", async (request) => {
     return { status: 'error', error };
   }
 });
+
+
+Parse.Cloud.define("getAppInstanceFromAppSlug", async (request) => {
+  try {
+    const appInstance = await getAppInstanceFromAppSlug(request.params);
+    
+    return { status: 'success', appInstance };
+  } catch (error) {
+    console.error('inside getAppInstanceFromAppSlug', error);
+    return { status: 'error', error };
+  }
+});
+
 
 
 Parse.Cloud.define("uninstallApp", async (request) => {
