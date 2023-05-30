@@ -9,7 +9,30 @@
      
       const init = (args) => {
         console.log('on forgeSDK onReady', args);
-        alert('we are ready')
+        const { param } = args;
+        const { title, textColor, url, backgroundColor } = param;      
+        // Creating a container element for the custom extension
+        const container = document.createElement('div');
+        container.style.backgroundColor = backgroundColor;
+        container.style.padding = '10px';
+
+        // Creating a dynamic message element
+        const messageElement = document.createElement('p');
+        messageElement.textContent = title;
+        messageElement.style.color = textColor;
+
+        // Creating a dynamic URL element
+        const linkElement = document.createElement('a');
+        linkElement.textContent = 'Click here';
+        linkElement.href = url;
+        linkElement.target = '_blank';
+
+        // Appending the dynamic elements to the container
+        container.appendChild(messageElement);
+        container.appendChild(linkElement);
+
+        // Displaying the custom extension on the webpage
+        document.body.appendChild(container);
       };
 
       forgeSDK.onReady(init);
