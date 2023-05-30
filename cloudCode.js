@@ -704,7 +704,8 @@ const getDeveloperAppBrief = (appObject) => {
     id: appObject.id,
     name: appObject.get('Name'),
     slug: appObject.get('Slug'),
-    url: appObject.get('URL')
+    url: appObject.get('URL'),
+    installParams: appObject.get('InstallParams')
   };
 }
 
