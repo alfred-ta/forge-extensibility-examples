@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    <title>Forge Client plugin - Main HTML</title>
+  </head>
+  <body>
+    <script src="./sdk.client.js" type="text/javascript"></script>
+    <script type="text/javascript">
+     
+      const init = (args) => {
+        console.log('on forgeSDK onReady', args);
+        alert('we are ready')
+      };
+
+      forgeSDK.onReady(init);
+    </script>
+  </body>
+</html>
