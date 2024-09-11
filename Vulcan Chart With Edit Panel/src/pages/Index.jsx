@@ -12,7 +12,7 @@ const Index = () => {
     });
     console.log('inside indx page', res);
     if (res.status === 'success') {
-      window.forgeSDK.register.tab({
+      window.forgeSDK.register.siteTab({
         component: res.url || '/',
         edit: `/edit`,
         name: "plugin-vulcan-chart",

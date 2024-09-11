@@ -4,12 +4,13 @@
     <title>Forge Client plugin - Simple Static Vulcan Chart</title>
   </head>
   <body>
-    <script src="https://199.ignite.getforge.com/parse/files/738f14cbbfe48cb0012e68865a49df4f/0e77e3947ae2bcb8259fb19e6dfad6cd_sdk_client_js" type="text/javascript"></script>
+    <script src="https://199.ignite.getforge.com/parse/files/738f14cbbfe48cb0012e68865a49df4f/b080fbb30bc33f3eda58985da090d68a_sdk_js" type="text/javascript"></script>
     <script type="text/javascript">
      
       const init = () => {
         console.log('on forgeSDK onReady', forgeSDK);
-        forgeSDK.register.tab({
+        forgeSDK.register.siteTab({
+          component: "https://app.vulcanapp.com/project/828e1e03-797f-4eef-a514-06af2c10e3a0/chart/ea5eea3c-8447-7c57-2752-4b6f7e91e89a?object=992981cb-85ae-4e27-8da4-782ba3a538c2",
           name: "configurable-plugin",
           label: "Configurable Plugin",
           height: "500",

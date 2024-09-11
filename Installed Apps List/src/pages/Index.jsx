@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 
 const Index = () => {
   const init = () => {
-    window.forgeSDK.register.tab({
+    window.forgeSDK.register.siteTab({
       component: `/main`,
       name: "user-installed-apps",
       label: "User Installed Apps",
